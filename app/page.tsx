@@ -1,8 +1,12 @@
 import { DictionarySearch } from "@/components/dictionary-search"
 import { AddWordDialog } from "@/components/add-word-dialog"
 import { BookOpen } from "lucide-react"
+import { testMongoConnection } from "./actions";
 
-export default function Page() {
+export default async function Page() {
+
+  await testMongoConnection();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container max-w-4xl mx-auto px-4 py-12">
@@ -26,3 +30,5 @@ export default function Page() {
     </div>
   )
 }
+
+

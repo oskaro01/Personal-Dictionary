@@ -1,85 +1,60 @@
 "use server"
 
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import clientPromise from "@/lib/mongodb";
 import { revalidatePath } from "next/cache"
 
-export async function addWords(words: { word: string; definition: string }[]) {
-  const supabase = await getSupabaseServerClient()
+// TEMPORARY in-memory placeholder
+// This lets the app run while we switch databases
 
-  const formattedWords = words.map((w) => ({
+let wordsStore: { id: string; word: string; definition: string; created_at: string }[] = []
+
+export async function addWords(words: { word: string; definition: string }[]) {
+  const now = new Date().toISOString()
+
+  const formatted = words.map((w) => ({
+    id: crypto.randomUUID(),
     word: w.word.toLowerCase().trim(),
     definition: w.definition.trim(),
+    created_at: now,
   }))
 
-  const { data, error } = await supabase
-    .from("dictionary")
-    .upsert(formattedWords, {
-      onConflict: "word",
-      ignoreDuplicates: false,
-    })
-    .select()
-
-  if (error) {
-    return { error: error.message }
-  }
+  wordsStore = [...formatted, ...wordsStore]
 
   revalidatePath("/")
-  return { data, count: data.length }
+  return { data: formatted, count: formatted.length }
 }
 
 export async function searchWords(query: string) {
-  const supabase = await getSupabaseServerClient()
+  const q = query.toLowerCase().trim()
 
-  const { data, error } = await supabase
-    .from("dictionary")
-    .select("*")
-    .ilike("word", `%${query.toLowerCase().trim()}%`)
-    .order("word", { ascending: true })
-    .limit(10)
-
-  if (error) {
-    return { error: error.message }
-  }
-
+  const data = wordsStore.filter((w) => w.word.includes(q)).slice(0, 10)
   return { data }
 }
 
 export async function getRecentWords() {
-  const supabase = await getSupabaseServerClient()
-
-  const { data, error } = await supabase
-    .from("dictionary")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(10)
-
-  if (error) {
-    return { error: error.message }
-  }
-
+  const data = wordsStore.slice(0, 10)
   return { data }
 }
 
 export async function getWordsByIds(ids: string[]) {
-  const supabase = await getSupabaseServerClient()
-
-  const { data, error } = await supabase.from("dictionary").select("*").in("id", ids)
-
-  if (error) {
-    return { error: error.message }
-  }
-
+  const data = wordsStore.filter((w) => ids.includes(w.id))
   return { data }
 }
 
 export async function getAllWords() {
-  const supabase = await getSupabaseServerClient()
+  return { data: wordsStore.sort((a, b) => a.word.localeCompare(b.word)) }
+}
 
-  const { data, error } = await supabase.from("dictionary").select("*").order("word", { ascending: true })
 
-  if (error) {
-    return { error: error.message }
-  }
 
-  return { data }
+export async function testMongoConnection() {
+  const client = await clientPromise;
+  const db = client.db("mydictionary");
+
+  const collections = await db.listCollections().toArray();
+
+  return {
+    ok: true,
+    collections: collections.map(c => c.name),
+  };
 }
