@@ -27,11 +27,26 @@ export async function addWords(words: { word: string; definition: string }[]) {
 
 
 export async function searchWords(query: string) {
-  const q = query.toLowerCase().trim()
+  const client = await clientPromise
+  const db = client.db("mydictionary")
 
-  const data = wordsStore.filter((w) => w.word.includes(q)).slice(0, 10)
-  return { data }
+  const words = await db
+    .collection("test")
+    .find({ word: { $regex: query, $options: "i" } })
+    .limit(10)
+    .toArray()
+
+  const formatted = words.map((w) => ({
+    id: w._id.toString(),
+    word: w.word,
+    definition: w.definition,
+    created_at: w.created_at.toISOString(),
+
+  }))
+
+  return { data: formatted }
 }
+
 
 export async function getRecentWords() {
   const data = wordsStore.slice(0, 10)
