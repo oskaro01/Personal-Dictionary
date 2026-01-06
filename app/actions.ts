@@ -9,20 +9,22 @@ import { revalidatePath } from "next/cache"
 let wordsStore: { id: string; word: string; definition: string; created_at: string }[] = []
 
 export async function addWords(words: { word: string; definition: string }[]) {
-  const now = new Date().toISOString()
+  const client = await clientPromise
+  const db = client.db("mydictionary")
+  const collection = db.collection("test")
 
-  const formatted = words.map((w) => ({
-    id: crypto.randomUUID(),
+  const formatted = words.map(w => ({
     word: w.word.toLowerCase().trim(),
     definition: w.definition.trim(),
-    created_at: now,
+    created_at: new Date(),
   }))
 
-  wordsStore = [...formatted, ...wordsStore]
+  const result = await collection.insertMany(formatted)
 
   revalidatePath("/")
-  return { data: formatted, count: formatted.length }
+  return { count: result.insertedCount }
 }
+
 
 export async function searchWords(query: string) {
   const q = query.toLowerCase().trim()
@@ -42,8 +44,18 @@ export async function getWordsByIds(ids: string[]) {
 }
 
 export async function getAllWords() {
-  return { data: wordsStore.sort((a, b) => a.word.localeCompare(b.word)) }
+  const client = await clientPromise
+  const db = client.db("mydictionary")
+
+  const data = await db
+    .collection("test")
+    .find({})
+    .sort({ word: 1 })
+    .toArray()
+
+  return { data }
 }
+
 
 
 
