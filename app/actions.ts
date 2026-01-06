@@ -8,6 +8,14 @@ import { revalidatePath } from "next/cache"
 
 let wordsStore: { id: string; word: string; definition: string; created_at: string }[] = []
 
+type WordDoc = {
+  _id: any
+  word: string
+  definition: string
+  created_at: Date
+}
+
+
 export async function addWords(words: { word: string; definition: string }[]) {
   const client = await clientPromise
   const db = client.db("mydictionary")
@@ -25,27 +33,49 @@ export async function addWords(words: { word: string; definition: string }[]) {
   return { count: result.insertedCount }
 }
 
+function similarity(a: string, b: string) {
+  let matches = 0
+  const len = Math.min(a.length, b.length)
+
+  for (let i = 0; i < len; i++) {
+    if (a[i] === b[i]) matches++
+  }
+
+  return matches
+}
+
 
 export async function searchWords(query: string) {
   const client = await clientPromise
   const db = client.db("mydictionary")
 
-  const words = await db
+  const q = query.toLowerCase().trim()
+
+  const words = (await db
     .collection("test")
-    .find({ word: { $regex: query, $options: "i" } })
-    .limit(10)
-    .toArray()
+    .find({})
+    .toArray()) as WordDoc[]
 
-  const formatted = words.map((w) => ({
-    id: w._id.toString(),
-    word: w.word,
-    definition: w.definition,
-    created_at: w.created_at.toISOString(),
+  const ranked = words
+    .map(w => ({
+      ...w,
+      score: similarity(q, w.word.toLowerCase()),
+    }))
+    .filter(w => w.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
 
-  }))
-
-  return { data: formatted }
+  return {
+    data: ranked.map(w => ({
+      id: w._id.toString(),
+      word: w.word,
+      definition: w.definition,
+      created_at: w.created_at.toISOString(),
+    }))
+  }
 }
+
+
 
 
 export async function getRecentWords() {
