@@ -11,7 +11,7 @@ export default async function Page() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container max-w-4xl mx-auto px-4 py-12">
         <header className="text-center mb-12 space-y-4">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center gap-2"> {/* change here */}
             <BookOpen className="h-10 w-10 text-primary" />
             <h1 className="text-4xl font-bold tracking-tight">Personal Dictionary</h1>
           </div>
@@ -22,6 +22,7 @@ export default async function Page() {
             <AddWordDialog />
           </div>
         </header>
+
 
         <main>
           <DictionarySearch />
