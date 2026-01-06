@@ -3,10 +3,12 @@
 import clientPromise from "@/lib/mongodb";
 import { revalidatePath } from "next/cache"
 
+import { ObjectId } from "mongodb"
+
 // TEMPORARY in-memory placeholder
 // This lets the app run while we switch databases
 
-let wordsStore: { id: string; word: string; definition: string; created_at: string }[] = []
+
 
 type WordDoc = {
   _id: any
@@ -79,14 +81,59 @@ export async function searchWords(query: string) {
 
 
 export async function getRecentWords() {
-  const data = wordsStore.slice(0, 10)
-  return { data }
+  const client = await clientPromise
+  const db = client.db("mydictionary")
+
+  const words = await db
+    .collection("test")
+    .find({})
+    .sort({ created_at: -1 })
+    .limit(10)
+    .toArray()
+
+  return {
+    data: words.map(w => ({
+      id: w._id.toString(),
+      word: w.word,
+      definition: w.definition,
+      created_at: w.created_at.toISOString(),
+    }))
+  }
 }
 
+
+
+
+
 export async function getWordsByIds(ids: string[]) {
-  const data = wordsStore.filter((w) => ids.includes(w.id))
-  return { data }
+  if (!ids || ids.length === 0) return { data: [] }
+
+  // ✅ only keep valid Mongo ObjectIds
+  const validIds = ids.filter(id => ObjectId.isValid(id))
+
+  if (validIds.length === 0) return { data: [] }
+
+  const client = await clientPromise
+  const db = client.db("mydictionary")
+
+  const objectIds = validIds.map(id => new ObjectId(id))
+
+  const words = await db
+    .collection("test")
+    .find({ _id: { $in: objectIds } })
+    .toArray()
+
+  return {
+    data: words.map(w => ({
+      id: w._id.toString(),
+      word: w.word,
+      definition: w.definition,
+      created_at: w.created_at.toISOString(),
+    }))
+  }
 }
+
+
 
 export async function getAllWords() {
   const client = await clientPromise
