@@ -18,12 +18,14 @@ type WordDoc = {
 }
 
 // duplicate problem solve ,, note >> verify that in db >> word_1_definition_1 (UNIQUE)
-export async function addWords(words: { word: string; definition: string }[]) {
+export async function addWords(
+  words: { word: string; definition: string }[]
+): Promise<{ inserted: number; error?: string }> {
   const client = await clientPromise
   const db = client.db("mydictionary")
   const collection = db.collection("test")
 
-  const formatted = words.map(w => ({
+  const formatted = words.map((w) => ({
     word: w.word.toLowerCase().trim(),
     definition: w.definition.trim(),
     created_at: new Date(),
@@ -37,12 +39,17 @@ export async function addWords(words: { word: string; definition: string }[]) {
     return { inserted: result.insertedCount }
   } catch (err: any) {
     // duplicate (word + definition) is OK
-    if (err.code === 11000) {
+    if (err.code === 11000) { 
       return { inserted: err.result?.nInserted || 0 }
     }
-    throw err
+
+    return {
+      inserted: 0,
+      error: "Failed to add words",
+    }
   }
 }
+
 
 
 function similarity(a: string, b: string) {

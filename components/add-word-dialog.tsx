@@ -43,7 +43,6 @@ export function AddWordDialog() {
         return
       }
 
-      // Validate all entries
       const isValid = wordsArray.every((w) => w.word && w.definition)
       if (!isValid) {
         toast({
@@ -62,15 +61,26 @@ export function AddWordDialog() {
           description: result.error,
           variant: "destructive",
         })
-      } else {
-        const count = result.count || 1
-        toast({
-          title: "Success",
-          description: `Added ${count} ${count === 1 ? "word" : "words"} to dictionary`,
-        })
-        setJsonInput("")
-        setOpen(false)
+        return
       }
+
+    const count = result.inserted
+
+    if (count === 0) {
+      toast({
+        title: "No new words added",
+        description: "All provided words already exist in your dictionary",
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: `Added ${count} ${count === 1 ? "word" : "words"} to dictionary`,
+      })
+    }
+
+    setJsonInput("")
+    setOpen(false)
+
     } catch (error) {
       toast({
         title: "Invalid JSON",
@@ -81,6 +91,7 @@ export function AddWordDialog() {
       setLoading(false)
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
