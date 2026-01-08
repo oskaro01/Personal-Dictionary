@@ -14,17 +14,32 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
-import { addWords } from "@/app/actions"
+import { addWords } from "@/lib/addWords"
 import { useToast } from "@/hooks/use-toast"
+
+import { useAdminKey } from "./adminKeyContext"
+
+
 
 export function AddWordDialog() {
   const [open, setOpen] = useState(false)
   const [jsonInput, setJsonInput] = useState("")
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  
+  const { adminKey } = useAdminKey() // grab key from context
 
   const handleSubmit = async () => {
     try {
+      if (!adminKey) {
+        toast({
+          title: "Admin key required",
+          description: "Please set the admin key from the sidebar first",
+          variant: "destructive",
+        })
+        return
+      }
+
       setLoading(true)
       const parsed = JSON.parse(jsonInput)
 
@@ -53,7 +68,17 @@ export function AddWordDialog() {
         return
       }
 
-      const result = await addWords(wordsArray)
+      const res = await fetch("/api/words", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminKey, // or input your key securely
+        },
+        body: JSON.stringify(wordsArray),
+        })
+
+      const result = await res.json()
+
 
       if (result.error) {
         toast({

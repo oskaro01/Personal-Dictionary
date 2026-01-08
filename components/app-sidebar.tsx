@@ -16,10 +16,20 @@ import {
 import { getAllWords } from "@/app/actions"
 import { WordDetailModal } from "./word-detail-modal"
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+
+import { useAdminKey } from "./adminKeyContext"
+
 export function AppSidebar() {
   const [words, setWords] = useState<any[]>([])
   const [selectedWord, setSelectedWord] = useState<any | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+
+  const { adminKey, setAdminKey } = useAdminKey()
+
+  const [keyDialogOpen, setKeyDialogOpen] = useState(false)
+
 
   useEffect(() => {
     async function fetchWords() {
@@ -56,12 +66,18 @@ export function AppSidebar() {
                     <span>Search</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Settings">
+                  <SidebarMenuButton tooltip="Set Admin Key" onClick={() => setKeyDialogOpen(true)}>
                     <Settings className="h-4 w-4" />
-                    <span>Settings</span>
+                    <span>Admin Key</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+
+
+
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -88,6 +104,7 @@ export function AppSidebar() {
         </SidebarContent>
       </Sidebar>
 
+      {/* Word Detail Modal */}
       {selectedWord && (
         <WordDetailModal
           word={selectedWord.word}
@@ -97,6 +114,37 @@ export function AppSidebar() {
           onOpenChange={setModalOpen}
         />
       )}
+
+      
+      {/* Admin Key Dialog */}
+      <Dialog open={keyDialogOpen} onOpenChange={setKeyDialogOpen}>
+        <DialogContent className="max-w-lg w-[75%] sm:w-full aspect-square flex flex-col mx-auto">
+          <DialogHeader>
+            <DialogTitle>Enter Admin Key</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <input
+              type="password"
+              name="admin-key"
+              autoComplete="off"
+              placeholder="Enter admin key"
+              className="w-full border rounded px-2 py-1"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)} // update state on typing
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKeyDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => setKeyDialogOpen(false)} // close dialog
+              className="bg-[#fae54d] hover:bg-[#e6d645] text-black"
+            >
+              Ok
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
     </>
   )
 }

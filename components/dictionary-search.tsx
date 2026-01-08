@@ -159,6 +159,7 @@ export function DictionarySearch() {
             onFocus={() => query.trim() !== "" && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             className="pl-10 h-12 text-lg"
+            autoComplete="off"
           />
           {showSuggestions && suggestions.length > 0 && (
             <Card className="absolute top-full mt-1 w-full z-50 max-h-64 overflow-y-auto">
